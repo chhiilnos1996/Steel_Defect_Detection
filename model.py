@@ -41,12 +41,13 @@ from tensorflow.python.keras.utils.data_utils import get_file
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.activations import relu
 from tensorflow.python.keras.applications.imagenet_utils import preprocess_input
+from keras.layers import *
+from keras.models import Model
 
 WEIGHTS_PATH_X = "https://github.com/bonlime/keras-deeplab-v3-plus/releases/download/1.1/deeplabv3_xception_tf_dim_ordering_tf_kernels.h5"
 WEIGHTS_PATH_MOBILE = "https://github.com/bonlime/keras-deeplab-v3-plus/releases/download/1.1/deeplabv3_mobilenetv2_tf_dim_ordering_tf_kernels.h5"
 WEIGHTS_PATH_X_CS = "https://github.com/bonlime/keras-deeplab-v3-plus/releases/download/1.2/deeplabv3_xception_tf_dim_ordering_tf_kernels_cityscapes.h5"
 WEIGHTS_PATH_MOBILE_CS = "https://github.com/bonlime/keras-deeplab-v3-plus/releases/download/1.2/deeplabv3_mobilenetv2_tf_dim_ordering_tf_kernels_cityscapes.h5"
-
 
 def SepConv_BN(x, filters, prefix, stride=1, kernel_size=3, rate=1, depth_activation=False, epsilon=1e-3):
     """ SepConv with BN between depthwise & pointwise. Optionally add activation after BN
@@ -174,7 +175,7 @@ def _make_divisible(v, divisor, min_value=None):
 
 
 def _inverted_res_block(inputs, expansion, stride, alpha, filters, block_id, skip_connection, rate=1):
-    in_channels = inputs.shape[-1]  # inputs._keras_shape[-1]
+    in_channels = inputs.shape[-1].value  # inputs._keras_shape[-1]
     pointwise_conv_filters = int(filters * alpha)
     pointwise_filters = _make_divisible(pointwise_conv_filters, 8)
     x = inputs
@@ -214,6 +215,119 @@ def _inverted_res_block(inputs, expansion, stride, alpha, filters, block_id, ski
 
     return x
 
+
+def UNet(input_shape, num_classes=4, width=8, inv_res = False, MCAD = False, res_encoder=False):
+    def inverted_res_block(inputs,  filters, skip_connection, expansion=3, stride=1, alpha=1, rate=1):
+        in_channels = inputs.shape[-1].value  
+        pointwise_conv_filters = int(filters * alpha)
+        pointwise_filters = _make_divisible(pointwise_conv_filters, 8)
+        x = inputs
+        x = DepthwiseConv2D(kernel_size=3, strides=stride, use_bias=False, padding='same', dilation_rate=rate)(x)
+        x = BatchNormalization(epsilon=1e-3, momentum=0.999)(x)
+        x = Activation(relu6)(x)
+        x = Conv2D(pointwise_filters, kernel_size=1, padding='same', use_bias=False)(x)
+        x = BatchNormalization(epsilon=1e-3, momentum=0.999)(x)
+        if skip_connection:
+            return Add()([inputs, x])
+        return x
+    
+    def conv_block(x, width, identity=False):
+        if(res_encoder):
+            x_short = x
+            x = Conv2D(width, (3, 3), padding='same') (x)
+            x = BatchNormalization()(x)
+            x = LeakyReLU()(x)
+            x = Conv2D(width, (3, 3), padding='same') (x)
+            x = BatchNormalization()(x)
+            if(identity):
+                x = Add()([x, x_short])
+                x = LeakyReLU()(x)
+                return x
+            x_short = Conv2D(width, (3, 3), padding='same') (x_short)
+            x_short = BatchNormalization()(x_short)
+            x = Add()([x, x_short])
+            x = LeakyReLU()(x)
+        else:
+            x = Conv2D(width, (3, 3), activation='relu', padding='same') (x)
+            x = Conv2D(width, (3, 3), activation='relu', padding='same') (x)
+        return x
+
+    inputs = Input(input_shape)
+    activation = 'sigmoid'
+    
+    #INVERTED RESNET ENCODER BORROWED FROM DEEPLABV3+
+    if(inv_res): 
+        c1 = inverted_res_block(inputs, filters=width, skip_connection=False)
+        p1 = MaxPooling2D((2, 2)) (c1)
+
+        c2 = inverted_res_block(p1, filters=width*2, skip_connection=False)
+        c2 = inverted_res_block(c2, filters=width*2, skip_connection=True)
+        p2 = MaxPooling2D((2, 2)) (c2)
+
+        c3 = inverted_res_block(p2, filters=width*4, skip_connection=False)
+        c3 = inverted_res_block(c3, filters=width*4, skip_connection=True)
+        p3 = MaxPooling2D((2, 2)) (c3)
+
+        c4 = inverted_res_block(p3, filters=width*8, skip_connection=False)
+        c4 = inverted_res_block(c4, filters=width*8, skip_connection=True)
+        p4 = MaxPooling2D(pool_size=(2, 2)) (c4)
+
+        c5 = inverted_res_block(p4, filters=width*16, skip_connection=False)
+        c5 = inverted_res_block(c5, filters=width*16, skip_connection=True)
+    
+    #RESNET LIKE ENCODER OR BASE-UNET ENCODER
+    else: 
+        c1 = conv_block(inputs, width, identity=True)
+        p1 = MaxPooling2D((2, 2)) (c1)
+        c2 = conv_block(p1, width*2)
+        p2 = MaxPooling2D((2, 2)) (c2)
+
+        c3 = conv_block(p2, width*4)
+        p3 = MaxPooling2D((2, 2)) (c3)
+
+        c4 = conv_block(p3, width*8)
+        p4 = MaxPooling2D(pool_size=(2, 2)) (c4)
+
+        c5 = conv_block(p4, width*16)
+    
+    p5 = MaxPooling2D(pool_size=(2, 2)) (c5)
+    
+    #MULTI-SCALE CONTEXT AGGREGATION WITH DILATED CONVOLUTIONS
+    if(MCAD):  
+        m1 = Conv2D(width*16, (3, 3), dilation_rate = 1, padding='same') (p5)
+        m2 = Conv2D(width*16, (3, 3), dilation_rate = 2, padding='same') (m1)
+        m4 = Conv2D(width*16, (3, 3), dilation_rate = 4, padding='same') (m2)
+        m8 = Conv2D(width*16, (3, 3), dilation_rate = 8, padding='same') (m4)
+        m12 = Conv2D(width*16, (3, 3), dilation_rate = 12, padding='same') (m8)
+        cm = Add()([m1, m2, m4, m8, m12])
+        cm = LeakyReLU()(cm)
+    else:
+        cm = conv_block(p5, width*32)
+    
+    res_encoder = False
+    um = Conv2DTranspose(width*16, (2, 2), strides=(2, 2), padding='same') (cm)
+    um = concatenate([um, c5])
+    cm = conv_block(um, width*16)
+
+    u6 = Conv2DTranspose(width*8, (2, 2), strides=(2, 2), padding='same') (cm)
+    u6 = concatenate([u6, c4])
+    c6 = conv_block(u6, width*8)
+
+    u7 = Conv2DTranspose(width*4, (2, 2), strides=(2, 2), padding='same') (c6)
+    u7 = concatenate([u7, c3])
+    c7 = conv_block(u7, width*4)
+
+    u8 = Conv2DTranspose(width*2, (2, 2), strides=(2, 2), padding='same') (c7)
+    u8 = concatenate([u8, c2])
+    c8 = conv_block(u8, width*2)
+
+    u9 = Conv2DTranspose(width, (2, 2), strides=(2, 2), padding='same') (c8)
+    u9 = concatenate([u9, c1], axis=3)
+    c9 = conv_block(u9, width)
+
+    outputs = Conv2D(num_classes, (1, 1), activation=activation) (c9)
+    model = Model(inputs=[inputs], outputs=[outputs])
+    return model
 
 def Deeplabv3(weights='pascal_voc', input_tensor=None, input_shape=(512, 512, 3), classes=21, backbone='mobilenetv2',
               OS=16, alpha=1., activation=None):
@@ -456,27 +570,27 @@ def Deeplabv3(weights='pascal_voc', input_tensor=None, input_shape=(512, 512, 3)
     model = Model(inputs, x, name='deeplabv3plus')
 
     # load weights
-    #
-    # if weights == 'pascal_voc':
-    #     if backbone == 'xception':
-    #         weights_path = get_file('deeplabv3_xception_tf_dim_ordering_tf_kernels.h5',
-    #                                 WEIGHTS_PATH_X,
-    #                                 cache_subdir='models')
-    #     else:
-    #         weights_path = get_file('deeplabv3_mobilenetv2_tf_dim_ordering_tf_kernels.h5',
-    #                                 WEIGHTS_PATH_MOBILE,
-    #                                 cache_subdir='models')
-    #     model.load_weights(weights_path, by_name=True)
-    # elif weights == 'cityscapes':
-    #     if backbone == 'xception':
-    #         weights_path = get_file('deeplabv3_xception_tf_dim_ordering_tf_kernels_cityscapes.h5',
-    #                                 WEIGHTS_PATH_X_CS,
-    #                                 cache_subdir='models')
-    #     else:
-    #         weights_path = get_file('deeplabv3_mobilenetv2_tf_dim_ordering_tf_kernels_cityscapes.h5',
-    #                                 WEIGHTS_PATH_MOBILE_CS,
-    #                                 cache_subdir='models')
-    #     model.load_weights(weights_path, by_name=True)
+
+    if weights == 'pascal_voc':
+        if backbone == 'xception':
+            weights_path = get_file('deeplabv3_xception_tf_dim_ordering_tf_kernels.h5',
+                                    WEIGHTS_PATH_X,
+                                    cache_subdir='models')
+        else:
+            weights_path = get_file('deeplabv3_mobilenetv2_tf_dim_ordering_tf_kernels.h5',
+                                    WEIGHTS_PATH_MOBILE,
+                                    cache_subdir='models')
+        model.load_weights(weights_path, by_name=True)
+    elif weights == 'cityscapes':
+        if backbone == 'xception':
+            weights_path = get_file('deeplabv3_xception_tf_dim_ordering_tf_kernels_cityscapes.h5',
+                                    WEIGHTS_PATH_X_CS,
+                                    cache_subdir='models')
+        else:
+            weights_path = get_file('deeplabv3_mobilenetv2_tf_dim_ordering_tf_kernels_cityscapes.h5',
+                                    WEIGHTS_PATH_MOBILE_CS,
+                                    cache_subdir='models')
+        model.load_weights(weights_path, by_name=True)
     return model
 
 def preprocess_input(x):
@@ -487,6 +601,3 @@ def preprocess_input(x):
         Input array scaled to [-1.,1.]
     """
     return preprocess_input(x, mode='tf')
-
-model = Deeplabv3(input_shape=(256, 1600, 1), classes=4)
-
