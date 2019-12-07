@@ -4,7 +4,7 @@
 ### Description
 This is **project D: Severstal Steel Defect Detection** using semantic segmentation by team **3Nature_2Journal_8GPU**. 
 
-The dataset for this project can be found [here](https://www.kaggle.com/c/severstal-steel-defect-detection/data). To run with our default path setup, create a new folder called "inputs" in the same directory as the one containing this cloned respository. Download and extract the dataset inside "inputs." The kaggle submission kernel can be found [here](https://www.kaggle.com/urajkumar/ece285-project-d). It contains the code to upload submission.csv files and submit to kaggle.
+The dataset for this project can be found [here](https://www.kaggle.com/c/severstal-steel-defect-detection/data). To run with our default path setup, create a new folder called "inputs" in the same directory as the one containing this cloned respository. Download and extract the dataset inside "inputs." The kaggle submission kernel can be found [here](https://www.kaggle.com/urajkumar/ece285-project-d). It contains the code to upload submission.csv files and submit to kaggle. Inside the kaggle kernel, load the dataset called `ece285_sub` which contains all the generated submission files.
 
 ### Requirements
 All the package requirements can be found in requirements.txt. To install the requirements:
