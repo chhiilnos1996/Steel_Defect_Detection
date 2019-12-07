@@ -66,5 +66,6 @@ def build_masks(rles, input_shape):
 
 def build_rles(masks):
     width, height, depth = masks.shape
-    rles = [mask2rle(post_process(masks[:, :, i])) for i in range(depth)]
+    #rles = [mask2rle(post_process(masks[:, :, i])) for i in range(depth)]
+    rles = [mask2rle((masks[:, :, i])) for i in range(depth)]
     return rles

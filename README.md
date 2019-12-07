@@ -10,4 +10,6 @@ The dataset can be found [here](https://www.kaggle.com/c/severstal-steel-defect-
     * Extracted data
   * ece285
     * The files from this repo
+    
+The kaggle submission kernel can be found [here](https://www.kaggle.com/urajkumar/ece285-project-d). It contains the code to upload submission.csv files and submit to kaggle.
 
