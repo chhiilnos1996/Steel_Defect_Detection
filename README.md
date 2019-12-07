@@ -30,6 +30,7 @@ The required file structure to run with our default paths are as follows:
 ### Code organization
 
 |file/folder name | Description of file |
-_________________________________________
-| a | sdfds|
-| b | sd |
+|-----------------|----------------- --:|
+| Demo.ipynb | sdfds|
+| Figures.ipynb | sdfds|
+| Train.ipynb | sdfds|
