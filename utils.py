@@ -1,3 +1,5 @@
+# Contains loss/accuracy metrics, mask to RLE, RLE to mask, and post-processing module.
+
 import os
 import json
 import gc
@@ -9,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 from keras.metrics import binary_crossentropy
+
 def dice_coef(y_true, y_pred, smooth=1):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)

@@ -1,3 +1,5 @@
+# Data Generator to load train, validation, test set in batches to be fed into keras.fit()
+
 import os
 import json
 import gc

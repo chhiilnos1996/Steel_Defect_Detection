@@ -1,21 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" Deeplabv3+ model for Keras.
-This model is based on TF repo:
-https://github.com/tensorflow/models/tree/master/research/deeplab
-On Pascal VOC, original model gets to 84.56% mIOU
-
-MobileNetv2 backbone is based on this repo:
-https://github.com/JonathanCMitchell/mobilenet_v2_keras
-
-# Reference
-- [Encoder-Decoder with Atrous Separable Convolution
-    for Semantic Image Segmentation](https://arxiv.org/pdf/1802.02611.pdf)
-- [Xception: Deep Learning with Depthwise Separable Convolutions]
-    (https://arxiv.org/abs/1610.02357)
-- [Inverted Residuals and Linear Bottlenecks: Mobile Networks for
-    Classification, Detection and Segmentation](https://arxiv.org/abs/1801.04381)
-"""
+# Contains code for building DeepLabv3+ model and the different U-net architectures explained in the report
 
 from __future__ import absolute_import
 from __future__ import division
