@@ -32,6 +32,8 @@ The required file structure to run with our default paths are as follows:
 
 file name | Description of file 
 --- | ---
- Demo.ipynb | sdfds
- Figures.ipynb | sdfds
- Train.ipynb | sdfds
+Demo.ipynb | sdfds
+Figures.ipynb | sdfds
+Train.ipynb | sdfds
+deeplabv3.ipynb | as
+Inference.ipynb | a
