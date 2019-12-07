@@ -40,3 +40,12 @@ Inference.ipynb | Predict on test set and export results
 data_gen.py | Data generator for loading train, validation, and test images
 model.py | Code for building all 4 models
 utils.py | Accuracy and loss metrics, conversion from mask to RLE and vice-versa, and post-processing
+train_idx.npy | indices for training set
+val_idx.npy | indices for validation set
+-----------------------------------
+folder name | Description of file 
+--- | ---
+ex_images | Example validation and test images for Demo.ipynb
+history | Training history for each model
+models | Trained model files
+submissions | Exported results on test set
