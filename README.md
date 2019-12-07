@@ -32,8 +32,11 @@ The required file structure to run with our default paths are as follows:
 
 file name | Description of file 
 --- | ---
-Demo.ipynb | sdfds
-Figures.ipynb | sdfds
-Train.ipynb | sdfds
-deeplabv3.ipynb | as
-Inference.ipynb | a
+Demo.ipynb | Qualitatively evaluate all models on validation and test set images
+Figures.ipynb | Recreate figures from report
+Train.ipynb | Train u-net, u-net with residual encoder, and u-net with inverted residual encoder
+deeplabv3.ipynb | Train deeplabv3+
+Inference.ipynb | Predict on test set and export results
+data_gen.py | Data generator for loading train, validation, and test images
+model.py | Code for building all 4 models
+utils.py | Accuracy and loss metrics, conversion from mask to RLE and vice-versa, and post-processing
