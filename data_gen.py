@@ -5,13 +5,15 @@ import json
 import gc
 import cv2
 import matplotlib.pyplot as plt
-import keras
+# import keras
+import tensorflow
+import tensorflow as tf
 import numpy as np
 import pandas as pd
 import sys
 from utils import build_masks
 
-class DataGenerator(keras.utils.Sequence):
+class DataGenerator(tf.keras.utils.Sequence):
     #'Generates data for Keras'
     def __init__(self, list_IDs, df, target_df=None, mode='fit', base_path='../input/train_images', batch_size=32, 
                  dim=(256, 1600), n_channels=1, n_classes=4, random_state=2019, shuffle=True):

@@ -26,8 +26,8 @@ from tensorflow.python.keras.utils.data_utils import get_file
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.activations import relu
 from tensorflow.python.keras.applications.imagenet_utils import preprocess_input
-from keras.layers import *
-from keras.models import Model
+from tensorflow.python.keras.layers import *
+from tensorflow.python.keras.models import Model
 
 WEIGHTS_PATH_X = "https://github.com/bonlime/keras-deeplab-v3-plus/releases/download/1.1/deeplabv3_xception_tf_dim_ordering_tf_kernels.h5"
 WEIGHTS_PATH_MOBILE = "https://github.com/bonlime/keras-deeplab-v3-plus/releases/download/1.1/deeplabv3_mobilenetv2_tf_dim_ordering_tf_kernels.h5"
