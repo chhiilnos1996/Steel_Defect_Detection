@@ -207,9 +207,15 @@ def UNet(input_shape, num_classes=4, width=8, inv_res = False, MCAD = False, res
         pointwise_conv_filters = int(filters * alpha)
         pointwise_filters = _make_divisible(pointwise_conv_filters, 8)
         x = inputs
+        x = Conv2D(expansion * in_channels, kernel_size=1, padding='same',
+                   use_bias=False, activation=None)(x)
+        x = BatchNormalization(epsilon=1e-3, momentum=0.999)(x)
+        x = Activation(relu6)(x)
+        
         x = DepthwiseConv2D(kernel_size=3, strides=stride, use_bias=False, padding='same', dilation_rate=rate)(x)
         x = BatchNormalization(epsilon=1e-3, momentum=0.999)(x)
         x = Activation(relu6)(x)
+        
         x = Conv2D(pointwise_filters, kernel_size=1, padding='same', use_bias=False)(x)
         x = BatchNormalization(epsilon=1e-3, momentum=0.999)(x)
         if skip_connection:
